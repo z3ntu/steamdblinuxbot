@@ -6,6 +6,7 @@
 import time, os.path, urllib2, codecs
 import tweepy
 from BeautifulSoup import BeautifulSoup
+from BeautifulSoup import BeautifulStoneSoup
 
 # store security-sensitive config data in a file that's not in source control
 # variables expected: api_key, api_secret, access_token, access_token_secret
@@ -20,6 +21,10 @@ LOCAL_DATA_FILE = 'steamlinux.html'
 DATA_URL = 'http://steamdb.info/linux'
 #STEAM_URL_BASE = 'http://store.steampowered.com/app/'
 STEAM_URL_BASE = 'http://steamdb.info/app/'
+# max # of posts to make in one run
+POST_LIMIT = 30
+# seconds to wait between multiple posts in one run
+POST_DELAY = 20
 
 LOG = False
 
@@ -53,6 +58,15 @@ def get_gamelist(soup):
         for id in appids:
             if linktxt and id == linktxt:
                 gamename = cells[i+1].string
+                # if tag has sub-tags, assume second eg:
+                # <td>Cakewalk Loop Manager <i>(APPLICATION)</i></td>
+                if not gamename:
+                    gamename = cells[i+1].contents[0] + cells[i+1].contents[1].string
+                # convert HTML chars, eg &amp;
+                # couldn't figure out BeautifulSoup's intended method :/
+                replacements = {'&amp;':'&', '&quot;':'"', '&apos;':"'"}
+                for k in replacements:
+                    gamename = gamename.replace(k, replacements[k])
                 status = cells[i+3].string
                 # "game works" usually enclosed in a span
                 if not status:
@@ -92,11 +106,12 @@ for newgame in new_games:
     for oldgame in old_games:
         if newgame.id == oldgame.id:
             found_game = True
-            if newgame.status != oldgame.status:
+            # only post about existing games that have been confirmed to work
+            if newgame.status != oldgame.status and newgame.status == 'Game Works':
                 found_change = True
                 new_post = '%s: %s ' % (newgame.status, newgame.name)
                 new_post += STEAM_URL_BASE + newgame.id
-                new_post += ' (was: %s)' % oldgame.status
+                #new_post += ' (was: %s)' % oldgame.status
                 posts.append(new_post)
     if not found_game:
         found_change = True
@@ -110,11 +125,11 @@ if not found_change:
 else:
     print('change(s) found! current time: %s' % time.ctime(time.time()))
     # if something goes wrong and list is absurdly long, snip it
-    if len(posts) > 20:
-        posts = posts[:20]
+    if len(posts) > POST_LIMIT:
+        posts = posts[:POST_LIMIT]
     for post in posts:
         post_txt = codecs.encode(str(post), 'ascii', 'replace')
         print(post_txt)
-        # wait good n long before posting in case we have a lot
-        time.sleep(30)
         api.update_status(post)
+        # wait good n long before posting in case we have a lot
+        time.sleep(POST_DELAY)
