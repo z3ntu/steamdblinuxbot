@@ -43,7 +43,7 @@ def get_gamelist(soup):
     # build list of app ids
     appids = []
     for link in soup.findAll('a'):
-        if link.get('href').startswith('/app/'):
+        if link.get('href') and link.get('href').startswith('/app/'):
             appids.append(link.string)
     # match app ids to game data
     games = []
@@ -64,13 +64,20 @@ def get_gamelist(soup):
                     gamename = cells[i+1].contents[0] + cells[i+1].contents[1].string
                 # convert HTML chars, eg &amp;
                 # couldn't figure out BeautifulSoup's intended method :/
-                replacements = {'&amp;':'&', '&quot;':'"', '&apos;':"'"}
+                replacements = {'&amp;':'&', '&quot;':'"', '&apos;':"'",
+                                '&#039;':"'",
+                            }
                 for k in replacements:
                     gamename = gamename.replace(k, replacements[k])
                 status = cells[i+3].string
                 # "game works" usually enclosed in a span
                 if not status:
-                    status = cells[i+3].findAll('span')[0].string
+                    status_tag = cells[i+3].findAll('span')
+                    # or sometimes it's not? steamDB html might have changed
+                    if len(status_tag) > 0:
+                        status = status_tag[0].string
+                    else:
+                        status = 'Game Works'
                 games.append(Game(id, gamename, status))
         i += 1
     return games
