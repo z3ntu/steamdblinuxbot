@@ -22,11 +22,11 @@ DATA_URL = 'http://steamdb.info/linux'
 #STEAM_URL_BASE = 'http://store.steampowered.com/app/'
 STEAM_URL_BASE = 'http://steamdb.info/app/'
 # max # of posts to make in one run
-POST_LIMIT = 30
+POST_LIMIT = 50
 # seconds to wait between multiple posts in one run
 POST_DELAY = 20
 
-LOG = False
+LOG = True
 
 class Game:
     "simple struct for a game DB entry"
@@ -61,11 +61,14 @@ def get_gamelist(soup):
                 # if tag has sub-tags, assume second eg:
                 # <td>Cakewalk Loop Manager <i>(APPLICATION)</i></td>
                 if not gamename:
-                    gamename = cells[i+1].contents[0] + cells[i+1].contents[1].string
+                    if cells[i+1].contents[1].string:
+                        gamename = cells[i+1].contents[0] + cells[i+1].contents[1].string
+                    else:
+                        gamename = cells[i+1].contents[0]
                 # convert HTML chars, eg &amp;
                 # couldn't figure out BeautifulSoup's intended method :/
                 replacements = {'&amp;':'&', '&quot;':'"', '&apos;':"'",
-                                '&#039;':"'",
+                                '&#039;':"'", '&ccedil;':'c'
                             }
                 for k in replacements:
                     gamename = gamename.replace(k, replacements[k])
@@ -115,11 +118,11 @@ for newgame in new_games:
             found_game = True
             # only post about existing games that have been confirmed to work
             if newgame.status != oldgame.status and newgame.status == 'Game Works':
-                found_change = True
+                found_change = True 
                 new_post = '%s: %s ' % (newgame.status, newgame.name)
                 new_post += STEAM_URL_BASE + newgame.id
                 #new_post += ' (was: %s)' % oldgame.status
-                posts.append(new_post)
+                #posts.append(new_post) # comment to disable Game Works posts
     if not found_game:
         found_change = True
         new_post = 'New Game: %s ' % newgame.name
