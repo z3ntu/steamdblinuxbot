@@ -122,7 +122,7 @@ for newgame in new_games:
                 new_post = '%s: %s ' % (newgame.status, newgame.name)
                 new_post += STEAM_URL_BASE + newgame.id
                 #new_post += ' (was: %s)' % oldgame.status
-                #posts.append(new_post) # comment to disable Game Works posts
+                posts.append(new_post) # comment to disable Game Works posts
     if not found_game:
         found_change = True
         new_post = 'New Game: %s ' % newgame.name
