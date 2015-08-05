@@ -68,7 +68,7 @@ def get_gamelist(soup):
                 # convert HTML chars, eg &amp;
                 # couldn't figure out BeautifulSoup's intended method :/
                 replacements = {'&amp;':'&', '&quot;':'"', '&apos;':"'",
-                                '&#039;':"'", '&ccedil;':'c', '&trade;':'™'
+                                '&#039;':"'", '&ccedil;':'c', '&trade;':'(tm)'
                             }
                 for k in replacements:
                     gamename = gamename.replace(k, replacements[k])
