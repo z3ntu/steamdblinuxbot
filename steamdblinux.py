@@ -72,6 +72,8 @@ def get_gamelist(soup):
                             }
                 for k in replacements:
                     gamename = gamename.replace(k, replacements[k])
+                # snip name after last line break (price info)
+                gamename = gamename[:gamename.rfind('\n')] + '\n'
                 status = cells[i+3].string
                 # "game works" usually enclosed in a span
                 if not status:
