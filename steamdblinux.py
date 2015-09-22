@@ -5,8 +5,8 @@
 
 import time, os.path, urllib2, codecs
 import tweepy
-from BeautifulSoup import BeautifulSoup
-from BeautifulSoup import BeautifulStoneSoup
+from bs4 import BeautifulSoup
+from bs4 import BeautifulStoneSoup
 
 # store security-sensitive config data in a file that's not in source control
 # variables expected: api_key, api_secret, access_token, access_token_secret
@@ -27,6 +27,9 @@ POST_LIMIT = 50
 POST_DELAY = 20
 
 LOG = True
+
+# debug: set False to disable writing to file and posting to twitter
+CAN_POST = True
 
 class Game:
     "simple struct for a game DB entry"
@@ -57,23 +60,19 @@ def get_gamelist(soup):
         linktxt = cell_links[0].string
         for id in appids:
             if linktxt and id == linktxt:
-                gamename = cells[i+1].string
+                name_cell = cells[i+1]
                 # if tag has sub-tags, assume second eg:
                 # <td>Cakewalk Loop Manager <i>(APPLICATION)</i></td>
-                if not gamename:
-                    if cells[i+1].contents[1].string:
-                        gamename = cells[i+1].contents[0] + cells[i+1].contents[1].string
+                if name_cell.string:
+                    gamename = name_cell.string
+                else:
+                    if name_cell.contents[1].string:
+                        gamename = name_cell.contents[0] + name_cell.contents[1].string
                     else:
-                        gamename = cells[i+1].contents[0]
-                # convert HTML chars, eg &amp;
-                # couldn't figure out BeautifulSoup's intended method :/
-                replacements = {'&amp;':'&', '&quot;':'"', '&apos;':"'",
-                                '&#039;':"'", '&ccedil;':'c', '&trade;':'(tm)'
-                            }
-                for k in replacements:
-                    gamename = gamename.replace(k, replacements[k])
+                        gamename = name_cell.contents[0]
                 # snip name after last line break (price info)
-                gamename = gamename[:gamename.rfind('\n')] + '\n'
+                gamename = gamename[:gamename.rfind('\n')]
+                gamename = gamename.strip()
                 status = cells[i+3].string
                 # "game works" usually enclosed in a span
                 if not status:
@@ -104,9 +103,10 @@ header = { 'User-Agent' : 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)' }
 req = urllib2.Request(DATA_URL, None, header)
 page_data = urllib2.urlopen(req).read()
 # write data over old file
-new_page = open(LOCAL_DATA_FILE, 'w')
-new_page.write(page_data)
-new_page.close()
+if CAN_POST:
+    new_page = open(LOCAL_DATA_FILE, 'w')
+    new_page.write(page_data)
+    new_page.close()
 soup = BeautifulSoup(page_data)
 new_games = get_gamelist(soup)
 
@@ -120,14 +120,14 @@ for newgame in new_games:
             found_game = True
             # only post about existing games that have been confirmed to work
             if newgame.status != oldgame.status and newgame.status == 'Game Works':
-                found_change = True 
-                new_post = '%s: %s ' % (newgame.status, newgame.name)
+                found_change = True
+                new_post = '%s:\n%s\n' % (newgame.status, newgame.name)
                 new_post += STEAM_URL_BASE + newgame.id
                 #new_post += ' (was: %s)' % oldgame.status
                 posts.append(new_post) # comment to disable Game Works posts
     if not found_game:
         found_change = True
-        new_post = 'New Game: %s ' % newgame.name
+        new_post = 'New Game:\n%s\n' % newgame.name
         new_post += STEAM_URL_BASE + newgame.id
         posts.append(new_post)
 
@@ -140,8 +140,9 @@ else:
     if len(posts) > POST_LIMIT:
         posts = posts[:POST_LIMIT]
     for post in posts:
-        post_txt = codecs.encode(str(post), 'ascii', 'replace')
+        post_txt = codecs.encode(unicode(post), 'utf-8', 'replace')
         print(post_txt)
-        api.update_status(post)
+        if CAN_POST:
+            api.update_status(post)
         # wait good n long before posting in case we have a lot
         time.sleep(POST_DELAY)
