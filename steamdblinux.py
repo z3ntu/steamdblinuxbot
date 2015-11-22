@@ -18,7 +18,7 @@ auth.set_access_token(access_token, access_token_secret)
 api = tweepy.API(auth)
 
 LOCAL_DATA_FILE = 'steamlinux.html'
-DATA_URL = 'http://steamdb.info/linux'
+DATA_URL = 'http://steamdb.info/linux/hints'
 #STEAM_URL_BASE = 'http://store.steampowered.com/app/'
 STEAM_URL_BASE = 'http://steamdb.info/app/'
 # max # of posts to make in one run
@@ -73,7 +73,10 @@ def get_gamelist(soup):
                 # snip name after last line break (price info)
                 gamename = gamename[:gamename.rfind('\n')]
                 gamename = gamename.strip()
-                status = cells[i+3].string
+                if len(cells) > i + 3:
+                    status = cells[i+3].string
+                else:
+                    status = 'Game Works'
                 # "game works" usually enclosed in a span
                 if not status:
                     status_tag = cells[i+3].findAll('span')
@@ -93,7 +96,7 @@ if LOG:
 
 # get old data from local version of page written out last run
 page_data = open(LOCAL_DATA_FILE)
-soup = BeautifulSoup(page_data)
+soup = BeautifulSoup(page_data, 'lxml')
 page_data.close()
 old_games = get_gamelist(soup)
 
@@ -107,8 +110,11 @@ if CAN_POST:
     new_page = open(LOCAL_DATA_FILE, 'w')
     new_page.write(page_data)
     new_page.close()
-soup = BeautifulSoup(page_data)
+soup = BeautifulSoup(page_data, 'lxml')
 new_games = get_gamelist(soup)
+
+#print('old games found: %s' % len(old_games))
+#print('new games found: %s' % len(new_games))
 
 # check for status changes between old and new data
 posts = []
