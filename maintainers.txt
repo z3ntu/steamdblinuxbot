@@ -1,0 +1,17 @@
+
+I'm JP, the original author of the @steamdb_linux twitter bot. I created this bot to monitor new Linux games appearing (or potentially appearing) on Steam. The bot does this by fetching the https://steamdb.info/linux page once an hour, and comparing the page contents with the previous hour's fetch.
+
+As it involves combing through HTML (using the excellent BeautifulSoup Python module) this method is hardly the most direct or efficient possible way of getting this data, and in the 18 months the bot has been running it's broken several times based on changes in SteamDB's layout.
+
+My time for side projects is limited these days, and I no longer feel maintaining this bot is a worthwhile use of my time. I still think it provides a valuable service, so it would be nice if one of the following happened:
+
+1) SteamDB creates something like an RSS feed for new Linux games that appear in their database.
+2) Someone takes my bot code here and fixes it up in a more maintainable, robust way. The bot has always been hosted on my home Raspberry Pi server, and I'm happy to continue hosting it if someone else maintains the code.
+3) Someone writes a new bot that fulfills the same function in a better way, eg by using the SteamKit library: https://github.com/SteamRE/SteamKit.
+
+In case #2 or 3, I'd be happy to turn over control of the @steamdb_linux twitter account.
+
+SteamDB's FAQ states that they do not allow scraping, and while one page access per hour is not making unfair use of the service they provide, I'd like to honor the letter of that law and also thank them for creating an excellent service.
+
+Anyone who wishes to contact me about any of the above can reach me via
+http://vectorpoem.com/contact.html
